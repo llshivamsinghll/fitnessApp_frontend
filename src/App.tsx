@@ -14,6 +14,7 @@ import AIPlanGeneration from "./pages/AIPlanGeneration";
 import Dashboard from "./pages/Dashboard";
 import CurrentPlan from "./pages/CurrentPlan";
 import NotFound from "./pages/NotFound";
+import "@/lib/test-config"; // Import test configuration for debugging
 
 const queryClient = new QueryClient();
 

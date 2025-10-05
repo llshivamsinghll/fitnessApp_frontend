@@ -46,9 +46,18 @@ export const config = {
   isSSR: import.meta.env.SSR,
 } as const;
 
-// Debug configuration in development
-if (config.isDev && config.features.debug) {
-  console.log('🔧 App Configuration:', config);
+// Debug configuration when debug is enabled (dev or prod)
+if (config.features.debug) {
+  console.log('🔧 App Configuration:', {
+    ...config,
+    env: {
+      VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+      VITE_ENABLE_DEBUG: import.meta.env.VITE_ENABLE_DEBUG,
+      PROD: import.meta.env.PROD,
+      DEV: import.meta.env.DEV,
+      MODE: import.meta.env.MODE
+    }
+  });
 }
 
 export default config;

@@ -31,10 +31,19 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     let backendUrl = config.api.baseUrl || config.dev.backendUrl;
     
     // Prevent requesting the frontend itself
-    if (!backendUrl || backendUrl.includes('your-backend-production-url') || backendUrl === window.location.origin) {
-      // Fallback to localhost if no proper backend URL is configured
-      backendUrl = 'http://localhost:5000';
-      console.warn('⚠️  No proper backend URL configured. Using localhost fallback. Please set VITE_API_BASE_URL in your environment variables.');
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    if (!backendUrl || 
+        backendUrl.includes('your-backend') || 
+        backendUrl === currentOrigin ||
+        backendUrl === '') {
+      // Log the issue for debugging
+      console.error('❌ Invalid backend URL detected:', {
+        backendUrl,
+        currentOrigin,
+        configApiBaseUrl: config.api.baseUrl,
+        configDevBackendUrl: config.dev.backendUrl
+      });
+      throw new Error(`Invalid backend URL configuration. Please set VITE_API_BASE_URL environment variable. Current value: ${backendUrl}`);
     }
     
     const cleanPath = path.startsWith('/api') ? path.substring(4) : path; // Remove /api prefix
@@ -42,12 +51,15 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     fullUrl = `${backendUrl}/api${normalizedPath}`;
   }
   
-  // Debug logging in development
-  if (config.isDev && config.features.debug) {
+  // Debug logging in development AND production when debug is enabled
+  if (config.features.debug) {
     console.log('🔗 API Request:', {
       originalPath: path,
       fullUrl,
       isDev: config.isDev,
+      isProd: config.isProd,
+      configApiBaseUrl: config.api.baseUrl,
+      configDevBackendUrl: config.dev.backendUrl,
       baseUrl: config.api.baseUrl,
       method: options.method || 'GET'
     });
