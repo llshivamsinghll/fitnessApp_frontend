@@ -10,7 +10,7 @@ export const config = {
 
   // API Configuration
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || '',
+    baseUrl: 'https://fitness-backend-jkfm.onrender.com', // Force production backend URL
     timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '10000'),
   },
 
@@ -18,7 +18,7 @@ export const config = {
   dev: {
     port: parseInt(import.meta.env.VITE_DEV_PORT || '8080'),
     host: import.meta.env.VITE_DEV_HOST || '::',
-    backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
+    backendUrl: import.meta.env.VITE_BACKEND_URL || 'https://fitness-backend-jkfm.onrender.com',
   },
 
   // Authentication Configuration

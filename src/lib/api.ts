@@ -19,37 +19,32 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  // Handle API URL construction for development vs production
+  // Handle API URL construction - always use direct backend URL
   let fullUrl: string;
+  let backendUrl = config.api.baseUrl || config.dev.backendUrl;
   
-  if (config.isDev) {
-    // In development, use proxy - ensure path starts with /api
-    const apiPath = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`;
-    fullUrl = apiPath;
-  } else {
-    // In production, use the full backend URL
-    let backendUrl = config.api.baseUrl || config.dev.backendUrl;
-    
-    // Prevent requesting the frontend itself
-    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-    if (!backendUrl || 
-        backendUrl.includes('your-backend') || 
-        backendUrl === currentOrigin ||
-        backendUrl === '') {
-      // Log the issue for debugging
-      console.error('❌ Invalid backend URL detected:', {
-        backendUrl,
-        currentOrigin,
-        configApiBaseUrl: config.api.baseUrl,
-        configDevBackendUrl: config.dev.backendUrl
-      });
-      throw new Error(`Invalid backend URL configuration. Please set VITE_API_BASE_URL environment variable. Current value: ${backendUrl}`);
-    }
-    
-    const cleanPath = path.startsWith('/api') ? path.substring(4) : path; // Remove /api prefix
-    const normalizedPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
-    fullUrl = `${backendUrl}/api${normalizedPath}`;
+  // Prevent requesting the frontend itself
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+  if (!backendUrl || 
+      backendUrl.includes('your-backend') || 
+      backendUrl === currentOrigin ||
+      backendUrl === '') {
+    // Log the issue for debugging
+    console.error('❌ Invalid backend URL detected:', {
+      backendUrl,
+      currentOrigin,
+      configApiBaseUrl: config.api.baseUrl,
+      configDevBackendUrl: config.dev.backendUrl,
+      isDev: config.isDev,
+      isProd: config.isProd
+    });
+    throw new Error(`Invalid backend URL configuration. Please set VITE_API_BASE_URL environment variable. Current value: ${backendUrl}`);
   }
+  
+  // Always use direct backend URL (no proxy)
+  const cleanPath = path.startsWith('/api') ? path.substring(4) : path; // Remove /api prefix
+  const normalizedPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+  fullUrl = `${backendUrl}/api${normalizedPath}`;
   
   // Debug logging in development AND production when debug is enabled
   if (config.features.debug) {
