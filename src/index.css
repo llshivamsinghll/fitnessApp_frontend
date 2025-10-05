@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide only specific profile popup elements */
+.profile-status-popup,
+.refresh-profile-modal,
+[data-popup="profile"] {
+  display: none !important;
+}
+
+/* Professional Fitness App Design System - Minimal & Classic */
+
+@layer base {
+  :root {
+    /* Base Colors - Professional Neutral Palette */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3%;
+    
+    /* Surface Colors */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3%;
+    --surface: 0 0% 98%;
+    --surface-foreground: 0 0% 15%;
+    
+    /* Interactive Elements */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3%;
+    
+    /* Primary - Professional Blue */
+    --primary: 210 40% 15%;
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 210 40% 12%;
+    
+    /* Secondary - Light Gray */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 15%;
+    --secondary-hover: 0 0% 94%;
+    
+    /* Muted Elements */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    
+    /* Accent - Subtle Green */
+    --accent: 142 12% 85%;
+    --accent-foreground: 142 25% 25%;
+    --accent-hover: 142 12% 82%;
+    
+    /* Status Colors */
+    --destructive: 0 65% 48%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 50% 40%;
+    --success-foreground: 0 0% 98%;
+    
+    /* Borders & Inputs */
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 210 40% 15%;
+
+    --radius: 0.3rem;
+    
+    /* Typography Scale */
+    --font-size-hero: 2rem;
+    --font-size-h1: 1.5rem;
+    --font-size-h2: 1.25rem;
+    --font-size-body: 0.875rem;
+    --font-size-small: 0.75rem;
+    
+    /* Spacing System */
+    --space-section: 4rem;
+    --space-card: 1.5rem;
+    --space-form: 1rem;
+    
+    /* Professional Shadows */
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-elevated: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+  }
+
+  .dark {
+    /* Dark mode colors - keeping minimal and professional */
+    --background: 0 0% 3%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 98%;
+    --surface: 0 0% 7%;
+    --surface-foreground: 0 0% 85%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 210 40% 80%;
+    --primary-foreground: 0 0% 5%;
+    --primary-hover: 210 40% 85%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 85%;
+    --secondary-hover: 0 0% 12%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 142 12% 15%;
+    --accent-foreground: 142 25% 85%;
+    --accent-hover: 142 12% 18%;
+    --destructive: 0 65% 58%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 50% 50%;
+    --success-foreground: 0 0% 5%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 210 40% 80%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  /* Professional Typography */
+  h1 { @apply text-2xl font-semibold tracking-tight; }
+  h2 { @apply text-xl font-semibold tracking-tight; }
+  h3 { @apply text-lg font-medium; }
+  
+  /* Form Elements */
+  .form-section { @apply space-y-4; }
+  .form-group { @apply space-y-2; }
+
+  /* Minimal Scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+  }
+}
