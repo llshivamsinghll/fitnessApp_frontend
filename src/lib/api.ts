@@ -19,11 +19,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  // Use environment variable for API base URL in production, proxy in development
-  const apiPath = path.startsWith('/') ? path : `/${path}`;
-  const fullUrl = config.isProd && config.api.baseUrl 
-    ? `${config.api.baseUrl}${apiPath}` 
-    : apiPath; // In development, use proxy
+  // Ensure path starts with /api for proxy to work, but don't double-prefix
+  const apiPath = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`;
+  const fullUrl = apiPath;
   
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), config.api.timeout);
