@@ -19,10 +19,40 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  // Ensure path starts with /api for proxy to work, but don't double-prefix
-  const apiPath = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`;
-  const fullUrl = apiPath;
+  // Handle API URL construction for development vs production
+  let fullUrl: string;
   
+  if (config.isDev) {
+    // In development, use proxy - ensure path starts with /api
+    const apiPath = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`;
+    fullUrl = apiPath;
+  } else {
+    // In production, use the full backend URL
+    let backendUrl = config.api.baseUrl || config.dev.backendUrl;
+    
+    // Prevent requesting the frontend itself
+    if (!backendUrl || backendUrl.includes('your-backend-production-url') || backendUrl === window.location.origin) {
+      // Fallback to localhost if no proper backend URL is configured
+      backendUrl = 'http://localhost:5000';
+      console.warn('⚠️  No proper backend URL configured. Using localhost fallback. Please set VITE_API_BASE_URL in your environment variables.');
+    }
+    
+    const cleanPath = path.startsWith('/api') ? path.substring(4) : path; // Remove /api prefix
+    const normalizedPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+    fullUrl = `${backendUrl}/api${normalizedPath}`;
+  }
+  
+  // Debug logging in development
+  if (config.isDev && config.features.debug) {
+    console.log('🔗 API Request:', {
+      originalPath: path,
+      fullUrl,
+      isDev: config.isDev,
+      baseUrl: config.api.baseUrl,
+      method: options.method || 'GET'
+    });
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), config.api.timeout);
   
