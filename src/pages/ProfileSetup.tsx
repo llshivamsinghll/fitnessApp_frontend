@@ -10,6 +10,7 @@ import { Upload, Camera, User, Target, Activity } from "lucide-react";
 import { api } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { SavedPlan } from "@/lib/plan";
 
 const ProfileSetup = () => {
   const [setupMethod, setSetupMethod] = useState("manual");
@@ -23,9 +24,13 @@ const ProfileSetup = () => {
     dietPreference: "",
     activityLevel: "",
     planDuration: "8",
-    medicalConditions: ""
+    medicalConditions: "",
+    location: "",
+    state: "",
+    cuisine: ""
   });
   const [loading, setLoading] = useState(false);
+  const [generationStep, setGenerationStep] = useState<"idle" | "saving" | "generating">("idle");
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -38,7 +43,7 @@ const ProfileSetup = () => {
     (async () => {
       setDataLoading(true);
       try {
-        const res = await api.get<{ user: { name?: string; height?: number; weight?: number; age?: number; gender?: string; fitnessGoal?: string; dietPreference?: string; activityLevel?: string; planDuration?: number; medicalConditions?: string } }>("/api/user/profile");
+        const res = await api.get<{ user: { name?: string; height?: number; weight?: number; age?: number; gender?: string; fitnessGoal?: string; dietPreference?: string; activityLevel?: string; planDuration?: number; medicalConditions?: string; location?: string; state?: string; cuisine?: string } }>("/api/user/profile");
         const u = res.user;
         setProfileData(prev => ({
           ...prev,
@@ -52,6 +57,9 @@ const ProfileSetup = () => {
           activityLevel: u.activityLevel || prev.activityLevel,
           planDuration: u.planDuration ? String(u.planDuration) : prev.planDuration,
           medicalConditions: u.medicalConditions || prev.medicalConditions,
+          location: u.location || prev.location,
+          state: u.state || prev.state,
+          cuisine: u.cuisine || prev.cuisine,
         }));
       } catch (e) {
         // ignore if no profile yet
@@ -65,13 +73,20 @@ const ProfileSetup = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setGenerationStep("saving");
     try {
       await api.put("/api/user/profile", profileData);
-      navigate("/ai-plan");
+      setGenerationStep("generating");
+      await api.post<{ success: boolean; plan: SavedPlan }>("/api/ai/generate-and-save", {
+        ...profileData,
+        planDuration: Number(profileData.planDuration) || 8
+      });
+      navigate("/current-plan");
     } catch (err: any) {
-      setError(err.message || "Failed to save profile");
+      setError(err.message || "Failed to generate your plan");
     } finally {
       setLoading(false);
+      setGenerationStep("idle");
     }
   };
 
@@ -285,6 +300,44 @@ const ProfileSetup = () => {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="form-group">
+                        <Label htmlFor="location" className="text-base font-medium">Country / Region</Label>
+                        <Input
+                          id="location"
+                          type="text"
+                          value={profileData.location}
+                          onChange={(e) => handleInputChange("location", e.target.value)}
+                          placeholder="India"
+                          className="mt-2 h-12"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <Label htmlFor="state" className="text-base font-medium">State / Area</Label>
+                        <Input
+                          id="state"
+                          type="text"
+                          value={profileData.state}
+                          onChange={(e) => handleInputChange("state", e.target.value)}
+                          placeholder="Maharashtra"
+                          className="mt-2 h-12"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <Label htmlFor="cuisine" className="text-base font-medium">Preferred Cuisine</Label>
+                        <Input
+                          id="cuisine"
+                          type="text"
+                          value={profileData.cuisine}
+                          onChange={(e) => handleInputChange("cuisine", e.target.value)}
+                          placeholder="Indian"
+                          className="mt-2 h-12"
+                        />
+                      </div>
+                    </div>
+
                     <div className="form-group">
                       <Label className="text-base font-medium mb-4 block">Activity Level</Label>
                         <RadioGroup 
@@ -347,7 +400,13 @@ const ProfileSetup = () => {
                   {error && <p className="text-sm text-destructive">{error}</p>}
                   <Button type="submit" className="w-full h-14 text-base hover:scale-[1.02] transition-transform" disabled={loading || dataLoading}>
                     <Activity className="h-5 w-5 mr-2" />
-                    {loading ? "Saving..." : dataLoading ? "Loading..." : "Generate My AI Plan"}
+                    {generationStep === "saving"
+                      ? "Saving Profile..."
+                      : generationStep === "generating"
+                        ? "Generating Workout & Diet Plan..."
+                        : dataLoading
+                          ? "Loading..."
+                          : "Generate My AI Plan"}
                   </Button>
                 </form>
               </TabsContent>

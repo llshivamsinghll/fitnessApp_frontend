@@ -10,15 +10,15 @@ export const config = {
 
   // API Configuration
   api: {
-    baseUrl: 'https://fitness-backend-jkfm.onrender.com', // Force production backend URL
-    timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '10000'),
+    baseUrl: import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:10000' : ''),
+    timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '120000'),
   },
 
   // Development Configuration
   dev: {
     port: parseInt(import.meta.env.VITE_DEV_PORT || '8080'),
     host: import.meta.env.VITE_DEV_HOST || '::',
-    backendUrl: import.meta.env.VITE_BACKEND_URL || 'https://fitness-backend-jkfm.onrender.com',
+    backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:10000',
   },
 
   // Authentication Configuration

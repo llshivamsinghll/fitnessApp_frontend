@@ -1,21 +1,24 @@
 #!/bin/bash
 
-# Vercel Environment Variables Setup Script
-# Run this after setting up your environment variables in Vercel dashboard
+echo "Checking frontend environment variables..."
 
-echo "🚀 Checking environment variables for production deployment..."
-
-echo "Environment variables that should be set in Vercel dashboard:"
-echo "VITE_API_BASE_URL=https://fitness-backend-jkfm.onrender.com"
+echo ""
+echo "Local development:"
+echo "VITE_API_BASE_URL=http://localhost:10000"
+echo "VITE_BACKEND_URL=http://localhost:10000"
 echo "VITE_ENABLE_DEBUG=true"
+
+echo ""
+echo "Production deployment:"
+echo "VITE_API_BASE_URL=https://fitness-backend-jkfm.onrender.com"
+echo "VITE_BACKEND_URL=https://fitness-backend-jkfm.onrender.com"
+echo "VITE_ENABLE_DEBUG=false"
 echo "VITE_ENABLE_ANALYTICS=false"
 
 echo ""
-echo "To set these in Vercel:"
-echo "1. Go to your Vercel project dashboard"
-echo "2. Go to Settings > Environment Variables"
-echo "3. Add each variable for Production environment"
-echo "4. Redeploy your application"
+echo "Local files:"
+echo "- .env.development is used by npm run dev and build:dev"
+echo "- .env.production is used by npm run build"
 
 echo ""
 echo "Current .env.production content:"

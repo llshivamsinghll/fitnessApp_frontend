@@ -30,13 +30,9 @@ export function testApiConfiguration() {
   const testPath = '/api/user/login';
   let testUrl = '';
   
-  if (config.isDev) {
-    testUrl = testPath;
-  } else {
-    const backendUrl = config.api.baseUrl || config.dev.backendUrl;
-    const cleanPath = testPath.startsWith('/api') ? testPath.substring(4) : testPath;
-    testUrl = `${backendUrl}/api${cleanPath}`;
-  }
+  const backendUrl = config.api.baseUrl || config.dev.backendUrl;
+  const cleanPath = testPath.startsWith('/api') ? testPath.substring(4) : testPath;
+  testUrl = `${backendUrl}/api${cleanPath}`;
   
   console.log('🎯 Test URL would be:', testUrl);
   

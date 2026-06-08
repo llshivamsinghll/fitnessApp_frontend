@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { SavedPlan, getTodayMeals, getTodayWorkout } from "@/lib/plan";
 import { 
   User, 
   Target, 
@@ -30,143 +31,41 @@ import {
   Apple
 } from "lucide-react";
 
-// Enhanced JSON parsing with multiple fallback strategies
 const parseWorkoutData = (workoutData: any) => {
-  if (!workoutData) return [];
-  
-  // Try raw field first (enhanced JSON parsing with fallbacks)
-  if (workoutData.raw) {
-    try {
-      let jsonStr = workoutData.raw;
-      if (typeof jsonStr !== 'string') {
-        jsonStr = JSON.stringify(jsonStr);
-      }
-      
-      // Clean up common JSON issues
-      jsonStr = jsonStr.trim();
-      if (jsonStr.includes('```json')) {
-        jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '');
-      }
-      
-      // Try to find complete JSON object if truncated
-      if (!jsonStr.endsWith('}') && !jsonStr.endsWith(']')) {
-        let braceCount = 0;
-        let lastCompleteIndex = -1;
-        for (let i = 0; i < jsonStr.length; i++) {
-          if (jsonStr[i] === '{') {
-            braceCount++;
-          } else if (jsonStr[i] === '}') {
-            braceCount--;
-            if (braceCount === 0) {
-              lastCompleteIndex = i;
-            }
-          }
-        }
-        if (lastCompleteIndex > 0) {
-          jsonStr = jsonStr.substring(0, lastCompleteIndex + 1);
-        }
-      }
-      
-      const parsedWorkout = JSON.parse(jsonStr);
-      
-      if (parsedWorkout.phases && Array.isArray(parsedWorkout.phases) && parsedWorkout.phases.length > 0) {
-        const weeks = [];
-        for (const phase of parsedWorkout.phases) {
-          if (phase.days && Array.isArray(phase.days)) {
-            const weekNumber = weeks.length + 1;
-            weeks.push({
-              number: weekNumber,
-              title: `${phase.name} (Week ${weekNumber})`,
-              days: phase.days.map((day: any, dayIdx: number) => ({
-                number: dayIdx + 1,
-                title: `${day.name}: ${day.focus}`,
-                bodyPart: day.focus,
-                exercises: day.exercises ? day.exercises.map((ex: any, exIdx: number) => ({
-                  id: exIdx + 1,
-                  name: ex.name || 'Unknown Exercise',
-                  sets: ex.sets || 0,
-                  reps: ex.reps || '0',
-                  restTime: 60,
-                  difficulty: 'Intermediate',
-                  muscleGroups: [day.focus],
-                  instructions: [ex.notes || 'Perform exercise with proper form'],
-                  tips: ['Focus on proper form', 'Control the movement'],
-                  safetyNotes: ['Start with lighter weights if needed']
-                })) : []
-              }))
-            });
-          }
-        }
-        if (weeks.length > 0) {
-          return weeks;
-        }
-      }
-    } catch (e) {
-      console.error('Error parsing workout raw field:', e);
-    }
-  }
-  
-  // Fallback to direct phases if available
-  if (workoutData.phases && Array.isArray(workoutData.phases)) {
-    return workoutData.phases.map((phase: any, idx: number) => ({
-      number: idx + 1,
-      title: phase.name || `Phase ${idx + 1}`,
-      days: phase.days ? phase.days.map((day: any, dayIdx: number) => ({
-        number: dayIdx + 1,
-        title: `${day.name}: ${day.focus}`,
-        bodyPart: day.focus,
-        exercises: day.exercises ? day.exercises.map((ex: any, exIdx: number) => ({
-          id: exIdx + 1,
-          name: ex.name || 'Unknown Exercise',
-          sets: ex.sets || 0,
-          reps: ex.reps || '0',
-          restTime: 60,
-          difficulty: 'Intermediate',
-          muscleGroups: [day.focus],
-          instructions: [ex.notes || 'Perform exercise with proper form'],
-          tips: ['Focus on proper form', 'Control the movement'],
-          safetyNotes: ['Start with lighter weights if needed']
-        })) : []
-      })) : []
-    }));
-  }
-  
-  return [];
+  const today = getTodayWorkout(workoutData);
+  if (!today) return [];
+
+  return [{
+    number: 1,
+    title: "Week 1",
+    days: [{
+      number: today.day,
+      title: `${today.dayName}: ${today.focus}`,
+      bodyPart: today.focus,
+      exercises: today.exercises.map((exercise, index) => ({
+        id: exercise.id || index + 1,
+        name: exercise.name,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        restTime: exercise.restSeconds || 60,
+        difficulty: 'Intermediate',
+        muscleGroups: [today.focus],
+        instructions: [exercise.notes || 'Perform exercise with proper form'],
+        tips: ['Focus on proper form', 'Control the movement'],
+        safetyNotes: ['Stop if you feel sharp pain']
+      }))
+    }]
+  }];
 };
 
 const parseNutritionData = (nutritionData: any) => {
-  if (!nutritionData) return null;
-  
-  // Try to parse as JSON first
-  if (nutritionData.raw) {
-    try {
-      let jsonStr = nutritionData.raw;
-      if (typeof jsonStr !== 'string') {
-        jsonStr = JSON.stringify(jsonStr);
-      }
-      
-      jsonStr = jsonStr.trim();
-      if (jsonStr.includes('```json')) {
-        jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '');
-      }
-      
-      const parsed = JSON.parse(jsonStr);
-      if (parsed && typeof parsed === 'object') {
-        return parsed;
-      }
-    } catch (e) {
-      console.error('Error parsing nutrition data:', e);
-    }
-  }
-  
-  // Return the data as-is if parsing fails
   return nutritionData;
 };
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [plan, setPlan] = useState<{ workout?: any; diet?: any; duration?: number; version?: number; createdAt?: string } | null>(null);
+  const [plan, setPlan] = useState<SavedPlan | null>(null);
   const [activeWorkout, setActiveWorkout] = useState<number | null>(null);
   const [workoutTimer, setWorkoutTimer] = useState<number>(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -213,7 +112,8 @@ const Dashboard = () => {
     ];
   
   // Get daily calorie target from AI nutrition data
-  const dailyCalories = parsedNutrition?.daily_targets?.calories || 2400;
+  const todayMeals = parsedNutrition ? getTodayMeals(parsedNutrition) : [];
+  const dailyCalories = parsedNutrition?.dailyTargets?.calories || 2400;
 
   // Helper functions
   const toggleMealCompletion = (mealIndex: number) => {
@@ -234,7 +134,7 @@ const Dashboard = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await api.get<{ success: boolean; plan: { workout: any; diet: any; duration?: number; version?: number; createdAt?: string } }>("/api/ai/latest-plan");
+        const res = await api.get<{ success: boolean; plan: SavedPlan }>("/api/ai/latest-plan");
         setPlan(res.plan);
       } catch (e) {
         setPlan(null);
@@ -664,14 +564,14 @@ const Dashboard = () => {
                     <span>Today's Meals</span>
                   </CardTitle>
                   <Badge variant="secondary">
-                    {parsedNutrition?.weekly_plan?.[0]?.meals?.length || 4} meals
+                    {todayMeals.length || 4} meals
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="flex-1 overflow-hidden">
                 <div className="h-full overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
-                {parsedNutrition?.weekly_plan?.[0]?.meals ? (
-                  parsedNutrition.weekly_plan[0].meals.map((meal: any, index: number) => {
+                {todayMeals.length > 0 ? (
+                  todayMeals.map((meal: any, index: number) => {
                     const isCompleted = completedMeals.has(index);
                     return (
                       <div key={index} className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
@@ -687,7 +587,7 @@ const Dashboard = () => {
                         <div className="flex-1">
                           <label htmlFor={`meal-${index}`} className="cursor-pointer">
                             <div className={`font-medium ${isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                              {meal.meal_type}
+                              {meal.mealType}
                             </div>
                             <div className={`text-sm ${isCompleted ? 'text-muted-foreground/70 line-through' : 'text-muted-foreground'}`}>
                               {meal.name}
@@ -704,10 +604,10 @@ const Dashboard = () => {
                 ) : (
                   // Fallback meals if no AI nutrition data
                   [
-                    { meal_type: "Breakfast", name: "Oatmeal with Berries", calories: 350, protein: 12 },
-                    { meal_type: "Lunch", name: "Grilled Chicken Salad", calories: 450, protein: 35 },
-                    { meal_type: "Snack", name: "Greek Yogurt", calories: 150, protein: 20 },
-                    { meal_type: "Dinner", name: "Salmon with Vegetables", calories: 500, protein: 40 }
+                    { mealType: "Breakfast", name: "Oatmeal with Berries", calories: 350, protein: 12 },
+                    { mealType: "Lunch", name: "Grilled Chicken Salad", calories: 450, protein: 35 },
+                    { mealType: "Snack", name: "Greek Yogurt", calories: 150, protein: 20 },
+                    { mealType: "Dinner", name: "Salmon with Vegetables", calories: 500, protein: 40 }
                   ].map((meal, index) => {
                     const isCompleted = completedMeals.has(index);
                     return (
@@ -724,7 +624,7 @@ const Dashboard = () => {
                         <div className="flex-1">
                           <label htmlFor={`meal-${index}`} className="cursor-pointer">
                             <div className={`font-medium ${isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                              {meal.meal_type}
+                              {meal.mealType}
                             </div>
                             <div className={`text-sm ${isCompleted ? 'text-muted-foreground/70 line-through' : 'text-muted-foreground'}`}>
                               {meal.name}
@@ -746,7 +646,7 @@ const Dashboard = () => {
                     <div>
                       <h4 className="font-medium text-foreground">Daily Nutrition</h4>
                       <p className="text-sm text-muted-foreground">
-                        Progress: {completedMeals.size}/{parsedNutrition?.weekly_plan?.[0]?.meals?.length || 4} meals • Target: {dailyCalories} cal
+                        Progress: {completedMeals.size}/{todayMeals.length || 4} meals - Target: {dailyCalories} cal
                       </p>
                     </div>
                     <Button variant="outline" size="sm">
